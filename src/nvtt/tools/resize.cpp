@@ -24,7 +24,6 @@
 #include <nvcore/Ptr.h>
 #include <nvcore/StrLib.h>
 #include <nvcore/StdStream.h>
-#include <nvcore/Containers.h>
 
 #include <nvimage/Image.h>
 #include <nvimage/ImageIO.h>
@@ -41,16 +40,16 @@
 
 static bool loadImage(nv::Image & image, const char * fileName)
 {
-	if (nv::strCaseCmp(nv::Path::extension(fileName), ".dds") == 0)
+	if (nv::strCaseDiff(nv::Path::extension(fileName), ".dds") == 0)
 	{
-		nv::DirectDrawSurface dds(fileName);
-		if (!dds.isValid())
+		nv::DirectDrawSurface dds;
+        if (!dds.load(fileName) || !dds.isValid())
 		{
 			printf("The file '%s' is not a valid DDS file.\n", fileName);
 			return false;
 		}
 		
-		dds.mipmap(&image, 0, 0); // get first image
+        return imageFromDDS(&image, dds, 0, 0); // get first image
 	}
 	else
 	{
@@ -60,9 +59,9 @@ static bool loadImage(nv::Image & image, const char * fileName)
 			printf("The file '%s' is not a supported image type.\n", fileName);
 			return false;
 		}
+        
+        return true;
 	}
-
-	return true;
 }
 
 
@@ -132,6 +131,10 @@ int main(int argc, char *argv[])
 
 			break;
 		}
+		else
+		{
+			printf("Warning: unrecognized option \"%s\"\n", argv[i]);
+		}
 	}
 
 	if (input.isNull() || output.isNull())
@@ -165,19 +168,20 @@ int main(int argc, char *argv[])
 	}
 
 	nv::Image image;
-	if (!loadImage(image, input)) return 0;
+	if (!loadImage(image, input.str())) return 0;
 
 	nv::FloatImage fimage(&image);
 	fimage.toLinear(0, 3, gamma);
-	
-	nv::AutoPtr<nv::FloatImage> fresult(fimage.resize(*filter, uint(image.width() * scale), uint(image.height() * scale), wrapMode));
+
+#if 1
+	nv::AutoPtr<nv::FloatImage> fresult(fimage.resize(*filter, uint(image.width * scale), uint(image.height * scale), wrapMode));
 	
 	nv::AutoPtr<nv::Image> result(fresult->createImageGammaCorrect(gamma));
-	result->setFormat(nv::Image::Format_ARGB);
+	result->format = nv::Image::Format_ARGB;
 
-	nv::StdOutputStream stream(output);
-	nv::ImageIO::saveTGA(stream, result.ptr());	// @@ Add generic save function. Add support for png too.
-	
+	nv::StdOutputStream stream(output.str());
+	nv::ImageIO::save(output.str(), stream, result.ptr());
+#endif	
 	return 0;
 }
 

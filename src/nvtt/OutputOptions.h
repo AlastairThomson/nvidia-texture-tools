@@ -1,4 +1,5 @@
-// Copyright NVIDIA Corporation 2007 -- Ignacio Castano <icastano@nvidia.com>
+// Copyright (c) 2009-2011 Ignacio Castano <castano@gmail.com>
+// Copyright (c) 2007-2009 NVIDIA Corporation -- Ignacio Castano <icastano@nvidia.com>
 // 
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -24,52 +25,70 @@
 #ifndef NV_TT_OUTPUTOPTIONS_H
 #define NV_TT_OUTPUTOPTIONS_H
 
-#include <nvcore/StrLib.h>
-#include <nvcore/StdStream.h>
 #include "nvtt.h"
+
+#include "nvcore/StrLib.h" // Path
+#include "nvcore/StdStream.h"
+
 
 namespace nvtt
 {
 
-	struct DefaultOutputHandler : public nvtt::OutputHandler
-	{
-		DefaultOutputHandler(const char * fileName) : stream(fileName) {}
-		
-		virtual ~DefaultOutputHandler()
-		{
-		}
-		
-		virtual void beginImage(int size, int width, int height, int depth, int face, int miplevel)
-		{
-			// ignore.
-		}
-		
-		// Output data.
-		virtual bool writeData(const void * data, int size)
-		{
-			stream.serialize(const_cast<void *>(data), size);
+    struct DefaultOutputHandler : public nvtt::OutputHandler
+    {
+        DefaultOutputHandler(const char * fileName) : stream(fileName) {}
+        DefaultOutputHandler(FILE * fp) : stream(fp, false) {}
 
-			//return !stream.isError();
-			return true;
-		}
-		
-		nv::StdOutputStream stream;
-	};
-	
-	
-	struct OutputOptions::Private
-	{
-		nv::Path fileName;
-		
-		mutable OutputHandler * outputHandler;
-		ErrorHandler * errorHandler;
-		bool outputHeader;
-		
-		bool openFile() const;
-		void closeFile() const;
-	};
+        virtual ~DefaultOutputHandler() {}
 
-	
+        virtual void beginImage(int size, int width, int height, int depth, int face, int miplevel)
+        {
+            // ignore.
+        }
+
+        // Output data.
+        virtual bool writeData(const void * data, int size)
+        {
+            stream.serialize(const_cast<void *>(data), size);
+
+            //return !stream.isError();
+            return true;
+        }
+
+        virtual void endImage()
+        {
+            // ignore.
+        }
+
+        nv::StdOutputStream stream;
+    };
+
+
+    struct OutputOptions::Private
+    {
+        nv::Path fileName;
+        FILE * fileHandle;
+
+        OutputHandler * outputHandler;
+        ErrorHandler * errorHandler;
+
+        bool outputHeader;
+        Container container;
+        int version;
+        bool srgb;
+        bool deleteOutputHandler;
+
+        void * wrapperProxy;    // For the C/C# wrapper.
+
+        bool hasValidOutputHandler() const;
+
+        void beginImage(int size, int width, int height, int depth, int face, int miplevel) const;
+        bool writeData(const void * data, int size) const;
+        void endImage() const;
+        void error(Error e) const;
+    };
+
+
 } // nvtt namespace
 
 

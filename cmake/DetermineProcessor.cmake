@@ -1,28 +1,32 @@
-
-# Assume i586 by default.
-SET(NV_SYSTEM_PROCESSOR "i586")
+# Determine the processor/architecture for compiler optimizations
 
 IF(UNIX)
-	FIND_PROGRAM(CMAKE_UNAME uname /bin /usr/bin /usr/local/bin )
-	IF(CMAKE_UNAME)
-		EXEC_PROGRAM(uname ARGS -p OUTPUT_VARIABLE NV_SYSTEM_PROCESSOR RETURN_VALUE val)
+	# Try uname -m first (machine hardware), it's more reliable for ARM64
+	execute_process(
+		COMMAND uname -m
+		OUTPUT_VARIABLE NV_SYSTEM_PROCESSOR
+		OUTPUT_STRIP_TRAILING_WHITESPACE
+		RESULT_VARIABLE val
+	)
 
-		IF("${val}" GREATER 0 OR NV_SYSTEM_PROCESSOR STREQUAL "unknown")
-			EXEC_PROGRAM(uname ARGS -m OUTPUT_VARIABLE NV_SYSTEM_PROCESSOR RETURN_VALUE val)
-		ENDIF("${val}" GREATER 0 OR NV_SYSTEM_PROCESSOR STREQUAL "unknown")
+	# If that fails or returns unknown, try uname -p (processor type)
+	IF("${val}" GREATER 0 OR NV_SYSTEM_PROCESSOR STREQUAL "unknown")
+		execute_process(
+			COMMAND uname -p
+			OUTPUT_VARIABLE NV_SYSTEM_PROCESSOR
+			OUTPUT_STRIP_TRAILING_WHITESPACE
+			RESULT_VARIABLE val
+		)
+	ENDIF()
 
-		# processor may have double quote in the name, and that needs to be removed
-		STRING(REGEX REPLACE "\"" "" NV_SYSTEM_PROCESSOR "${NV_SYSTEM_PROCESSOR}")
-		STRING(REGEX REPLACE "/" "_" NV_SYSTEM_PROCESSOR "${NV_SYSTEM_PROCESSOR}")
-	ENDIF(CMAKE_UNAME)
-
-	# Get extended processor information with:
-	# `cat /proc/cpuinfo`
-
-ELSE(UNIX)
-  IF(WIN32)
-    SET (NV_SYSTEM_PROCESSOR "$ENV{PROCESSOR_ARCHITECTURE}")
-  ENDIF(WIN32)
+	IF("${val}" GREATER 0)
+		MESSAGE(ERROR " Failed to determine processor type")
+		SET(NV_SYSTEM_PROCESSOR "unknown")
+	ENDIF()
 ENDIF(UNIX)
 
+IF(WIN32)
+	SET(NV_SYSTEM_PROCESSOR "$ENV{PROCESSOR_ARCHITECTURE}")
+ENDIF(WIN32)
 
+MESSAGE(STATUS "Detected processor: ${NV_SYSTEM_PROCESSOR}")

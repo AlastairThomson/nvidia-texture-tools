@@ -1,9 +1,10 @@
 // This code is in the public domain -- castano@gmail.com
 
+#pragma once
 #ifndef NV_CORE_LIBRARY_H
 #define NV_CORE_LIBRARY_H
 
-#include <nvcore/nvcore.h>
+#include "nvcore.h"
 
 #if NV_OS_WIN32
 #define LIBRARY_NAME(name)	#name ".dll"
@@ -20,30 +21,30 @@ NVCORE_API void * nvBindSymbol(void * lib, const char * symbol);
 class NVCORE_CLASS Library
 {
 public:
-	Library(const char * name)
-	{
-		handle = nvLoadLibrary(name);
-	}
-	~Library()
-	{
-		if (isValid())
-		{
-			nvUnloadLibrary(handle);
-		}
-	}
-	
-	bool isValid() const
-	{
-		return handle != NULL;
-	}
-	
-	void * bindSymbol(const char * symbol)
-	{
-		return nvBindSymbol(handle, symbol);
-	}
-	
+    Library(const char * name)
+    {
+        handle = nvLoadLibrary(name);
+    }
+    ~Library()
+    {
+        if (isValid())
+        {
+            nvUnloadLibrary(handle);
+        }
+    }
+
+    bool isValid() const
+    {
+        return handle != NULL;
+    }
+
+    void * bindSymbol(const char * symbol)
+    {
+        return nvBindSymbol(handle, symbol);
+    }
+
 private:
-	void * handle;
+    void * handle;
 };
 
 

@@ -1,0 +1,35 @@
+# Build directories
+build/
+*.app
+
+# IDE
+.vscode/
+.idea/
+
+# Temporary directories
+v2.1.2/
+v2.1.2-arm64/
+
+# Test outputs
+tests/results/
+tests/baselines/
+*.dds
+
+# macOS
+.DS_Store
+
+# Compiled objects
+*.o
+*.a
+*.dylib
+*.so
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+*.cmake
+
+# Backup files
+*.bak
+*.bak2

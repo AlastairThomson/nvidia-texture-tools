@@ -1,35 +1,48 @@
 
-INCLUDE(${NV_CMAKE_DIR}/DetermineProcessor.cmake)
+# Detect if we're using Clang (including Apple Clang)
+IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	SET(CMAKE_COMPILER_IS_CLANG TRUE)
+ENDIF()
 
-# Set optimal options for gcc:
-IF(CMAKE_COMPILER_IS_GNUCXX)
+# Set optimal options for Clang/LLVM (macOS and other platforms):
+IF(CMAKE_COMPILER_IS_CLANG)
+	# Enable modern C++ features
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-	IF(NV_SYSTEM_PROCESSOR STREQUAL "i586")
-		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=i586")
-	ENDIF(NV_SYSTEM_PROCESSOR STREQUAL "i586")
+	# Position-independent code for shared libraries
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
-	IF(NV_SYSTEM_PROCESSOR STREQUAL "i686")
-		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=i686")
-		#SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpmath=sse -mtune=i686 -msse3")
-		#SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=pentium4")
-	ENDIF(NV_SYSTEM_PROCESSOR STREQUAL "i686")
+	# Fast math optimizations
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
 
-	IF(NV_SYSTEM_PROCESSOR STREQUAL "x86_64")
-		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=athlon64")
-		#SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=athlon64 -msse3")
-	ENDIF(NV_SYSTEM_PROCESSOR STREQUAL "x86_64")
+	# Optimization level for release builds
+	SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
-	IF(NV_SYSTEM_PROCESSOR STREQUAL "powerpc")
-		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mcpu=powerpc -maltivec -mabi=altivec -mpowerpc-gfxopt")
-		
-		# ibook G4:
-		#SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mcpu=7450 -mtune=7450 -maltivec -mabi=altivec -mpowerpc-gfxopt")
-	ENDIF(NV_SYSTEM_PROCESSOR STREQUAL "powerpc")
+	# CPU-specific optimizations
+	IF(NV_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
+		# Apple Silicon / ARM64 - use native optimizations
+		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mcpu=apple-m1")
+		ADD_DEFINITIONS(-D__ARM_NEON__=1)
+	ELSEIF(NV_SYSTEM_PROCESSOR MATCHES "i.86|x86_64|amd64")
+		# x86/x86_64 - use native optimizations
+		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+	ELSE()
+		# Other architectures - use native optimizations
+		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+	ENDIF()
 
-ENDIF(CMAKE_COMPILER_IS_GNUCXX)
+	# Link-time optimization for release builds
+	SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
+
+ENDIF()
+
+# Set optimal options for GCC (non-Clang):
+IF(CMAKE_COMPILER_IS_GNUCXX AND NOT CMAKE_COMPILER_IS_CLANG)
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+ENDIF()
 
 IF(MSVC)
-	# @@ Some of these might only be available in VC8.
 	# Code generation flags.
 #	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /arch:SSE2 /fp:fast")
 #	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE2 /fp:fast")

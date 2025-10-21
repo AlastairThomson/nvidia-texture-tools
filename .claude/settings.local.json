@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmake:*)",
+      "Read(//private/tmp/**)",
+      "Read(//tmp/**)",
+      "Bash(/Users/alastair/Developer/nvidia-texture-tools/v2.1.2-arm64/build/src/nvtt/tools/nvcompress:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
